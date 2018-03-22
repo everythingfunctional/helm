@@ -1,6 +1,11 @@
+{-# LANGUAGE DeriveGeneric #-}
 module Main where
 
-import Lib
+import           GHC.Generics (Generic)
 
-main :: IO ()
-main = someFunc
+data Task = Task
+    { taskId      :: Int
+    , description :: String
+    } deriving (Eq, Show, Generic)
+
+main = putStrLn "Hello"
