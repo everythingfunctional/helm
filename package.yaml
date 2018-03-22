@@ -36,6 +36,7 @@ executables:
     dependencies:
     - aeson
     - helm
+    - servant-server
 
 tests:
   helm-test:
