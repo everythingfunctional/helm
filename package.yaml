@@ -35,6 +35,7 @@ executables:
     - -with-rtsopts=-N
     dependencies:
     - aeson
+    - either
     - helm
     - servant-server
 

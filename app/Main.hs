@@ -1,11 +1,15 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators     #-}
 module Main where
 
-import           Data.Aeson   (ToJSON)
-import           GHC.Generics (Generic)
-import           Servant      ((:<|>), (:>), Capture, Get, JSON)
+import           Control.Monad.Trans.Either (EitherT, left)
+import           Data.Aeson                 (ToJSON)
+import           Data.List                  (find)
+import           GHC.Generics               (Generic)
+import           Servant                    ((:<|>), (:>), Capture, Get, JSON,
+                                             ServantErr, err404, errBody)
 
 data Task = Task
     { taskId      :: Int
@@ -25,5 +29,13 @@ tasks =
     , Task 3 "Make stuff up"
     , Task 4 "Foobar"
     ]
+
+taskById :: Int -> EitherT ServantErr IO Task
+taskById idParam =
+  case a of
+    Nothing -> left (err404 {errBody = "No artist with given id exists"})
+    Just b  -> return b
+  where
+    a = find ((== idParam) . taskId) tasks
 
 main = putStrLn "Hello"
