@@ -38,6 +38,7 @@ executables:
     - either
     - helm
     - servant-server
+    - warp
 
 tests:
   helm-test:
