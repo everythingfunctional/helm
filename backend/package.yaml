@@ -36,6 +36,8 @@ executables:
     - either
     - helm
     - servant-server
+    - wai
+    - wai-cors
     - warp
 
 tests:

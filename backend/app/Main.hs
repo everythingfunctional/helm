@@ -4,14 +4,18 @@
 {-# LANGUAGE TypeOperators     #-}
 module Main where
 
-import           Data.Aeson               (ToJSON)
-import           Data.List                (find)
-import           GHC.Generics             (Generic)
-import           Network.Wai.Handler.Warp (run)
-import           Servant                  ((:<|>) (..), (:>), Application,
-                                           Capture, Get, Handler, JSON,
-                                           Proxy (..), ServantErr, Server,
-                                           err404, errBody, serve, throwError)
+import           Data.Aeson                  (ToJSON)
+import           Data.List                   (find)
+import           GHC.Generics                (Generic)
+import           Network.Wai                 (Middleware)
+import           Network.Wai.Handler.Warp    (run)
+import           Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors,
+                                              simpleHeaders)
+import           Servant                     ((:<|>) (..), (:>), Application,
+                                              Capture, Get, Handler, JSON,
+                                              Proxy (..), ServantErr, Server,
+                                              err404, errBody, serve,
+                                              throwError)
 
 data Task = Task
     { taskId      :: Int
@@ -51,5 +55,20 @@ api = Proxy
 app :: Application
 app = serve api helmServer
 
+helmCors :: Middleware
+helmCors = cors $ const (Just helmResourcePolicy)
+
+helmResourcePolicy :: CorsResourcePolicy
+helmResourcePolicy = CorsResourcePolicy
+        { corsOrigins = Nothing -- gives you /*
+        , corsMethods = ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTION"]
+        , corsRequestHeaders = simpleHeaders -- adds "Content-Type" to defaults
+        , corsExposedHeaders = Nothing
+        , corsMaxAge = Nothing
+        , corsVaryOrigin = False
+        , corsRequireOrigin = False
+        , corsIgnoreFailures = False
+        }
+
 main :: IO ()
-main = run 3000 app
+main = run 3000 $ helmCors app
