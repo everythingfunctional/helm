@@ -24,12 +24,12 @@ data Task = Task
 
 instance ToJSON Task
 
-type HelmAPI =
+type TaskAPI =
         Get '[JSON] [Task]
         :<|> Capture "taskId" Int :> Get '[JSON] Task
 
-tasks :: [Task]
-tasks =
+defaultTasks :: [Task]
+defaultTasks =
     [ Task 1 "Say hello"
     , Task 2 "Say goodbye"
     , Task 3 "Make stuff up"
@@ -42,18 +42,18 @@ taskById idParam =
     Nothing -> throwError err404 {errBody = "No task with given id exists"}
     Just b  -> return b
   where
-    a = find ((== idParam) . taskId) tasks
+    a = find ((== idParam) . taskId) defaultTasks
 
-helmServer :: Server HelmAPI
-helmServer = return tasks :<|> taskById
+taskServer :: Server TaskAPI
+taskServer = return defaultTasks :<|> taskById
 
-type API = "tasks" :> HelmAPI
+type HelmAPI = "tasks" :> TaskAPI
 
-api :: Proxy API
+api :: Proxy HelmAPI
 api = Proxy
 
 app :: Application
-app = serve api helmServer
+app = serve api taskServer
 
 helmCors :: Middleware
 helmCors = cors $ const (Just helmResourcePolicy)
