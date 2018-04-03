@@ -13,8 +13,9 @@ import           Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors,
                                               simpleHeaders)
 import           Servant                     ((:<|>) (..), (:>), Application,
                                               Capture, Get, Handler, JSON,
-                                              Proxy (..), ServantErr, Server,
-                                              err404, errBody, serve,
+                                              Proxy (..), Raw, ServantErr,
+                                              Server, err404, errBody, serve,
+                                              serveDirectoryFileServer,
                                               throwError)
 
 data Task = Task
@@ -24,9 +25,9 @@ data Task = Task
 
 instance ToJSON Task
 
-type TaskAPI =
-        Get '[JSON] [Task]
-        :<|> Capture "taskId" Int :> Get '[JSON] Task
+type TaskApi =
+        "tasks" :> (Get '[JSON] [Task]
+        :<|> Capture "taskId" Int :> Get '[JSON] Task)
 
 defaultTasks :: [Task]
 defaultTasks =
@@ -44,16 +45,21 @@ taskById idParam =
   where
     a = find ((== idParam) . taskId) defaultTasks
 
-taskServer :: Server TaskAPI
+taskServer :: Server TaskApi
 taskServer = return defaultTasks :<|> taskById
 
-type HelmAPI = "tasks" :> TaskAPI
+rawServer :: Server Raw
+rawServer = serveDirectoryFileServer "frontend/dist"
 
-api :: Proxy HelmAPI
+type HelmApi = "api" :> TaskApi
+
+type ApiWithAssets = HelmApi :<|> Raw
+
+api :: Proxy ApiWithAssets
 api = Proxy
 
 app :: Application
-app = serve api taskServer
+app = serve api (taskServer :<|> rawServer)
 
 helmCors :: Middleware
 helmCors = cors $ const (Just helmResourcePolicy)
