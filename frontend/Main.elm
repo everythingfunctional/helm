@@ -34,7 +34,7 @@ fetchTasks =
 
 fetchTasksUrl : String
 fetchTasksUrl =
-    "http://localhost:3000/tasks"
+    "http://localhost:3000/api/tasks"
 
 
 tasksDecoder : Decode.Decoder (List Task)
