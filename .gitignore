@@ -2,4 +2,5 @@
 helm.cabal
 *~
 frontend/elm-stuff
-frontend/dist/elm.js
+frontend/dist
+frontend/node_modules
