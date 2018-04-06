@@ -1,33 +1,49 @@
-{-# LANGUAGE DataKinds         #-}
-{-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators     #-}
 module Main where
 
-import           Data.Aeson                  (ToJSON)
 import           Data.List                   (find)
-import           GHC.Generics                (Generic)
 import           Network.Wai                 (Middleware)
 import           Network.Wai.Handler.Warp    (run)
 import           Network.Wai.Middleware.Cors (CorsResourcePolicy (..), cors,
                                               simpleHeaders)
-import           Servant                     ((:<|>) (..), (:>), Application,
-                                              Capture, Get, Handler, JSON,
-                                              Proxy (..), Raw, ServantErr,
-                                              Server, err404, errBody, serve,
+import           Servant                     ((:<|>) ((:<|>)), (:>),
+                                              Application, Handler,
+                                              Proxy (Proxy), Raw, Server,
+                                              err404, errBody, serve,
                                               serveDirectoryFileServer,
                                               throwError)
+import           Types                       (ApiWithAssets,
+                                              Task (Task, taskId), TaskApi)
 
-data Task = Task
-    { taskId      :: Int
-    , description :: String
-    } deriving (Eq, Show, Generic)
+main :: IO ()
+main = run 3000 $ helmCors app
 
-instance ToJSON Task
+helmCors :: Middleware
+helmCors = cors $ const (Just helmResourcePolicy)
 
-type TaskApi =
-        "tasks" :> (Get '[JSON] [Task]
-        :<|> Capture "taskId" Int :> Get '[JSON] Task)
+helmResourcePolicy :: CorsResourcePolicy
+helmResourcePolicy = CorsResourcePolicy
+      { corsOrigins = Nothing -- gives you /*
+      , corsMethods = ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTION"]
+      , corsRequestHeaders = simpleHeaders -- adds "Content-Type" to defaults
+      , corsExposedHeaders = Nothing
+      , corsMaxAge = Nothing
+      , corsVaryOrigin = False
+      , corsRequireOrigin = False
+      , corsIgnoreFailures = False
+      }
+
+app :: Application
+app = serve api (taskServer :<|> rawServer)
+
+
+api :: Proxy ApiWithAssets
+api = Proxy
+
+
+taskServer :: Server TaskApi
+taskServer = return defaultTasks :<|> taskById
 
 defaultTasks :: [Task]
 defaultTasks =
@@ -39,42 +55,12 @@ defaultTasks =
 
 taskById :: Int -> Handler Task
 taskById idParam =
-  case a of
-    Nothing -> throwError err404 {errBody = "No task with given id exists"}
-    Just b  -> return b
+  case maybeTask of
+    Nothing   -> throwError err404 {errBody = "No task with given id exists"}
+    Just task -> return task
   where
-    a = find ((== idParam) . taskId) defaultTasks
+    maybeTask = find ((== idParam) . taskId) defaultTasks
 
-taskServer :: Server TaskApi
-taskServer = return defaultTasks :<|> taskById
 
 rawServer :: Server Raw
 rawServer = serveDirectoryFileServer "frontend/dist"
-
-type HelmApi = "api" :> TaskApi
-
-type ApiWithAssets = HelmApi :<|> Raw
-
-api :: Proxy ApiWithAssets
-api = Proxy
-
-app :: Application
-app = serve api (taskServer :<|> rawServer)
-
-helmCors :: Middleware
-helmCors = cors $ const (Just helmResourcePolicy)
-
-helmResourcePolicy :: CorsResourcePolicy
-helmResourcePolicy = CorsResourcePolicy
-        { corsOrigins = Nothing -- gives you /*
-        , corsMethods = ["GET", "POST", "PUT", "DELETE", "HEAD", "OPTION"]
-        , corsRequestHeaders = simpleHeaders -- adds "Content-Type" to defaults
-        , corsExposedHeaders = Nothing
-        , corsMaxAge = Nothing
-        , corsVaryOrigin = False
-        , corsRequireOrigin = False
-        , corsIgnoreFailures = False
-        }
-
-main :: IO ()
-main = run 3000 $ helmCors app

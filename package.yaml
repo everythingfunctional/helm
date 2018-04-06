@@ -19,6 +19,8 @@ description:         Please see the README on Github at <https://github.com/bpri
 
 dependencies:
 - base >= 4.7 && < 5
+- aeson
+- servant-server
 
 library:
   source-dirs: src
@@ -32,10 +34,8 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     dependencies:
-    - aeson
     - either
     - helm
-    - servant-server
     - wai
     - wai-cors
     - warp
