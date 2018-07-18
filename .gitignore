@@ -1,6 +1,0 @@
-.stack-work/
-helm.cabal
-*~
-frontend/elm-stuff
-frontend/dist
-frontend/node_modules
